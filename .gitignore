@@ -1,0 +1,76 @@
+# Ambiente virtual
+venv/
+env/
+.venv/
+.env/
+
+# Arquivos de configuração locais
+*.env
+.env.*
+*.ini
+*.local
+*.cfg
+
+# Arquivos do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs e caches
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.sqlite
+*.db-journal
+*.tmp
+*.bak
+
+# Cache de pacotes e builds
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# IDEs e editores
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testes e relatórios
+htmlcov/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.pytest_cache/
+
+# Docker
+docker-compose.override.yml
+.docker/
+*.pid
+
+# Sistemas operacionais
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# Mypy / Pyright
+.mypy_cache/
+.pyright/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# Outras pastas comuns
+node_modules/
