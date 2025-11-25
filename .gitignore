@@ -74,3 +74,8 @@ desktop.ini
 
 # Outras pastas comuns
 node_modules/
+
+#Alembic
+.alembic.ini/
+alembic.ini/
+
