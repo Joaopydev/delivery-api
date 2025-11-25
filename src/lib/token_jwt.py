@@ -1,7 +1,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -67,22 +67,23 @@ async def validate_access_token(token_jwt: str):
     return payload_data["sub"]
 
 async def verify_token(
+    request: Request,
     token: str = Depends(oauth2_schema),
     session: AsyncSession = Depends(get_database)
 ) -> str:
     try:
         user_id = await validate_access_token(token_jwt=token)
-        async with session as session:
-            query = select(User).where(User.id == int(user_id))
-            result = await session.execute(query)
-            get_user = result.scalars().first()
-            if not get_user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Access denied"
-                )
+        query = select(User).where(User.id == int(user_id))
+        result = await session.execute(query)
+        get_user = result.scalars().first()
+        if not get_user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Access denied"
+            )
+        request.state.user_id = user_id
         return user_id
-    except JWTError as e:
+    except JWTError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid or expired access token."

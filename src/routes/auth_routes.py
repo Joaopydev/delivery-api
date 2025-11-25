@@ -40,7 +40,7 @@ async def signup(
 @auth_router.post("/refresh")
 async def use_refresh_token(user_id: str = Depends(verify_token)) -> Dict[str, Any]:
     
-    new_access_token = signin_access_token(user_id=user_id)
+    new_access_token = await signin_access_token(user_id=user_id)
 
     return {
         "acces_token": new_access_token,

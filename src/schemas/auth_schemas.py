@@ -5,9 +5,13 @@ class SigninSchema(BaseModel):
     email: EmailStr
     password: str
 
+    class Config:
+        from_attributes = True  
 
 class SignupSchema(SigninSchema):
     name: str
     active: Optional[bool] = True
     admin: Optional[bool] = False
-    
+
+    class Config:
+        from_attributes = True  

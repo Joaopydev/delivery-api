@@ -23,39 +23,39 @@ class SignupService:
         self.session = session
 
     async def account_creation_service(self, data: SignupSchema) -> Dict[str, Any]:
-        async with self.session as session:
-            query = select(User).where(User.email == data.email)
-            result = await session.execute(query)
-            user = result.scalars().first()
-            if user:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Email already exists"
-                )
-            
-            hashed_password = hashpw(
-                password=data.password.encode("utf-8"),
-                salt=gensalt(8)
+        query = select(User).where(User.email == data.email)
+        result = await self.session.execute(query)
+        user = result.scalars().first()
+        if user:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already exists"
             )
+        
+        hashed_password = hashpw(
+            password=data.password.encode("utf-8"),
+            salt=gensalt(8)
+        )
 
-            new_user = User(
-                name=data.name,
-                email=data.email,
-                password=hashed_password
-            )
+        new_user = User(
+            name=data.name,
+            email=data.email,
+            password=hashed_password,
+            admin=data.admin,
+        )
 
-            session.add(new_user)
-            await session.commit()
-            await session.refresh(new_user)
+        self.session.add(new_user)
+        await self.session.commit()
+        await self.session.refresh(new_user)
 
-            access_token = await signin_access_token(user_id=new_user.id)
-            refresh_token = await signin_access_token(
-                user_id=new_user.id,
-                token_duration=timedelta(days=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")))
-            )
+        access_token = await signin_access_token(user_id=new_user.id)
+        refresh_token = await signin_access_token(
+            user_id=new_user.id,
+            token_duration=timedelta(days=int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")))
+        )
 
-            return {
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-                "token_type": "Bearer",
-            }
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "Bearer",
+        }

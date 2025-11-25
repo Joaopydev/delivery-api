@@ -1,7 +1,6 @@
 #uvicorn main:app --reload
 from fastapi import FastAPI
 from fastapi.security import OAuth2PasswordBearer
-from dotenv import load_dotenv
 
 app = FastAPI()
 
