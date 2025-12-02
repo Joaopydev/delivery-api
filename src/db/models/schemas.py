@@ -1,8 +1,9 @@
 from datetime import datetime
 from enum import Enum
+from decimal import Decimal
 
-from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
-from sqlalchemy import String, Integer, Boolean, Float, ForeignKey, LargeBinary, Enum as SQLEnum, DateTime
+from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
+from sqlalchemy import String, Integer, Boolean, ForeignKey, LargeBinary, Enum as SQLEnum, DateTime, Numeric
 
 
 class Base(DeclarativeBase):
@@ -32,9 +33,9 @@ class Order(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.PENDING)
     user: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    price: Mapped[float] = mapped_column(Float, default=0.0)
+    price: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal(0.00))
     date: Mapped[datetime] = mapped_column(DateTime, index=True, default=datetime.now)
-    # items: 
+    items: Mapped[list["OrderItem"]] = relationship("OrderItem", backref="current_order", cascade="all, delete-orphan", lazy="selectin")
 
 
 class ItemSize(Enum):
@@ -51,5 +52,5 @@ class OrderItem(Base):
     quantity: Mapped[int] = mapped_column(Integer)
     flavor: Mapped[str] = mapped_column(String(200))
     size: Mapped[str] = mapped_column(SQLEnum(ItemSize))
-    unit_price: Mapped[float] = mapped_column(Float)
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     order: Mapped[Order] = mapped_column(ForeignKey("orders.id"))

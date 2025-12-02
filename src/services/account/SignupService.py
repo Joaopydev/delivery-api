@@ -18,6 +18,8 @@ load_dotenv()
 
 
 class SignupService:
+    
+    '''Service class to handle user sign-up operations.'''
 
     def __init__(self, session: Optional[AsyncSession]):
         self.session = session

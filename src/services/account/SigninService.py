@@ -19,6 +19,8 @@ load_dotenv()
 
 class SigninService:
 
+    '''Service class to handle user sign-in operations.'''
+
     def __init__(self, session: Optional[AsyncSession]):
         self.session = session
 

@@ -1,8 +1,8 @@
-"""empty message
+"""create tables
 
-Revision ID: 7c299b12c695
+Revision ID: cdef1991304c
 Revises: 
-Create Date: 2025-11-25 10:42:47.408339
+Create Date: 2025-12-01 18:20:46.610732
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '7c299b12c695'
+revision: str = 'cdef1991304c'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -35,7 +35,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('status', sa.Enum('PENDING', 'CANCELED', 'COMPLETED', name='orderstatus'), nullable=False),
     sa.Column('user', sa.Integer(), nullable=False),
-    sa.Column('price', sa.Float(), nullable=False),
+    sa.Column('price', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('date', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['user'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -46,7 +46,7 @@ def upgrade() -> None:
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('flavor', sa.String(length=200), nullable=False),
     sa.Column('size', sa.Enum('SMALL', 'AVERAGE', 'BIG', name='itemsize'), nullable=False),
-    sa.Column('unit_price', sa.Float(), nullable=False),
+    sa.Column('unit_price', sa.Numeric(precision=10, scale=2), nullable=False),
     sa.Column('order', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['order'], ['orders.id'], ),
     sa.PrimaryKeyConstraint('id')
