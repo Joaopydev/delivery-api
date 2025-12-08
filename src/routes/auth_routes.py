@@ -1,4 +1,4 @@
-from typing import Dict, Any, Union, Annotated
+from typing import Dict, Any, Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession

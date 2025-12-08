@@ -73,9 +73,7 @@ async def verify_token(
 ) -> str:
     try:
         user_id = await validate_access_token(token_jwt=token)
-        query = select(User).where(User.id == int(user_id))
-        result = await session.execute(query)
-        get_user = result.scalars().first()
+        get_user = session.get(User, int(user_id))
         if not get_user:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

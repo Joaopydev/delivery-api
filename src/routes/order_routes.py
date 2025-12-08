@@ -1,10 +1,7 @@
-from datetime import date
 from typing import ( 
     Dict,
     Any,
-    Optional,
     List, 
-    Annotated,
 )
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,11 +10,10 @@ from fastapi import (
     Depends,
     Request, 
     status,
-    Query,
 )
 
-
 from ..db.connection import get_database
+from ..db.models.schemas import OrderStatus
 from ..services.orders.OrderService import OrderService
 from ..lib.token_jwt import verify_token
 from ..schemas.order_schemas import (
@@ -58,22 +54,18 @@ async def cancel_order(
 
 @order_router.post("/list-orders")
 async def list_orders(
+    status: OrderStatus,
     request: Request,
     session: AsyncSession = Depends(get_database),
-    start_date: Annotated[Optional[date], Query(description="Parameter to list orders according to a start date.")] = None,
-    end_date: Annotated[Optional[date], Query(description="Parameter to list orders according to an end date.")] = None,
 ) -> Dict[str, List[OrderSchema]]:
     
     order_service = OrderService(session=session)
     orders = await order_service.list_orders(
         user_id=int(request.state.user_id),
-        start_date=start_date,
-        end_date=end_date,
+        status=status
     )
 
-    return {
-        "orders": orders
-    }
+    return {"orders": orders}
 
 
 @order_router.post("/add-item/{order_id}", status_code=status.HTTP_201_CREATED)
@@ -109,3 +101,54 @@ async def delete_item_from_order(
     )
 
     return {"message": f"Order item {order_item_id} succesfully deleted."}
+
+
+# TODO implement logic to confirm order and send to kitche
+@order_router.post("/comfirm-order/{order_id}")
+async def confirm_order(
+    order_id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_database)
+) -> Dict[str, OrderSchema]:
+    
+    order_service = OrderService(session=session)
+    order = await order_service.confirm_order(
+        order_id=order_id,
+        user_id=int(request.state.user_id)
+    )
+    
+    return {"order": order}
+
+@order_router.post("/send-order/{order_id}")
+async def send_order(
+    order_id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_database)
+) -> Dict[str, OrderSchema]:
+    
+    order_service = OrderService(session=session)
+    order = await order_service.send_order(
+        order_id=order_id,
+        user_id=int(request.state.user_id)
+    )
+
+    return {"order": order}
+
+@order_router.post("/confirm-order-readiness/{order_id}")
+async def confirm_order_readiness(
+    order_id: int,
+    request: Request,
+    session: AsyncSession = Depends(get_database)
+) -> Dict[str, OrderSchema]:
+    
+    order_service = OrderService(session=session)
+    order = await order_service.confirm_order_readiness(
+        order_id=order_id,
+        user_id=int(request.state.user_id),
+    )
+
+    return {"order": order}
+
+
+
+# TODO implement logic to create payment route

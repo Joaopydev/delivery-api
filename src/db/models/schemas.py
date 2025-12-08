@@ -23,6 +23,8 @@ class User(Base):
 
 class OrderStatus(Enum):
     PENDING: str = "pending"
+    PREPARING: str = "preparing"
+    AWAITING_CONFIRMATION: str = "awaiting confirmation"
     CANCELED: str = "canceled"
     COMPLETED: str = "completed"
 
@@ -34,7 +36,8 @@ class Order(Base):
     status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.PENDING)
     user: Mapped[int] = mapped_column(ForeignKey("users.id"))
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal(0.00))
-    date: Mapped[datetime] = mapped_column(DateTime, index=True, default=datetime.now)
+    created_at: Mapped[datetime] = mapped_column(DateTime, index=True, default=datetime.now)
+    confirmed_on: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=True)
     items: Mapped[list["OrderItem"]] = relationship("OrderItem", backref="current_order", cascade="all, delete-orphan", lazy="selectin")
 
 
@@ -54,3 +57,10 @@ class OrderItem(Base):
     size: Mapped[str] = mapped_column(SQLEnum(ItemSize))
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     order: Mapped[Order] = mapped_column(ForeignKey("orders.id"))
+
+
+# TODO Implement Kitchen Table
+
+
+
+# TODO Implement Payments Table

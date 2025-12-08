@@ -27,7 +27,8 @@ class OrderSchema(BaseModel):
     status: str
     user: int
     price: float
-    date: datetime
+    created_at: datetime
+    confirmed_on: datetime
     items: List[OrderItemSchema]
 
     class Config:

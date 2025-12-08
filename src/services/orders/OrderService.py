@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional, List, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Query
@@ -6,9 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.sql import func
 from fastapi import HTTPException, status
 
-from ...db.models.schemas import Order, User, OrderItem
-from ...schemas.order_schemas import OrderSchema, OrderItemSchema, DeleteItemFromOrderSchema
-from ...db.models.schemas import OrderStatus
+from ...db.models.schemas import Order, OrderStatus, User, OrderItem
+from ...schemas.order_schemas import OrderSchema, OrderItemSchema
 
 
 class OrderService:
@@ -35,6 +34,12 @@ class OrderService:
             order_id=order_id,
             user_id=user_id,
         )
+        if datetime.now(timezone.utc) - order.confirmed_on > timedelta(min=15) and not user.admin:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="The time allowed to cancel the order has already passed.",
+            )
+
         if order.user != user_id and not user.admin:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -50,32 +55,18 @@ class OrderService:
     async def list_orders(
         self,
         user_id: int,
-        start_date: date,
-        end_date: date,
+        status: str,
     ) -> List[Order]:
-
-        if end_date and start_date and end_date < start_date:
-            raise HTTPException(
-                detail="The end date cannot be earlier than the start date.",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
         
+        # TODO Update method to list order according the status
         user = await self.session.get(User, user_id)
         if not user.admin:
             raise HTTPException(
                 detail="Unauthorized user",
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
-                
-        if start_date is None and end_date is None:
-            return []
         
-        query = select(Order)
-        query = self._filter_orders_by_date(
-            query=query,
-            start_date=start_date,
-            end_date=end_date,
-        )
+        query = select(Order).where(Order.status == status)
         result = await self.session.execute(query)
         orders = result.scalars().all()
 
@@ -138,9 +129,76 @@ class OrderService:
         await self.session.delete(order_item)
         await self.session.commit()
     
+    async def confirm_order(
+        self,
+        order_id: int,
+        user_id: int,
+    ) -> Order:
+        order, user, _ = await self._ensure_entities_exists(
+            order_id=order_id,
+            user_id=user_id
+        )
+        if not user.admin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You do not have permission to modify this order"
+            )
+        
+        order.status = OrderStatus.PREPARING
+        order.confirmed_on = datetime.now(tz=timezone.utc)
+
+        await self.session.commit()
+        await self.session.refresh(order)
+
+        return order
+    
+    async def confirm_order_readiness(
+        self,
+        order_id: int,
+        user_id: int,
+    ) -> Order:
+        
+        order, user, _ = await self._ensure_entities_exists(
+            order_id=order_id,
+            user_id=user_id
+        )
+
+        if not user.admin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You do not have permission to modify this order"
+            )
+        
+        order.status = OrderStatus.COMPLETED
+        await self.session.commit()
+        await self.session.refresh(order)
+
+        return order
+        
+    async def send_order(
+        self,
+        order_id: int,
+        user_id: int,
+    ) -> Order:
+        order, user, _ = await self._ensure_entities_exists(
+            order_id=order_id,
+            user_id=user_id
+        )
+        if order.user != user.id and not user.admin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You do not have permission to modify this order"
+            )
+        
+        order.status = OrderStatus.AWAITING_CONFIRMATION
+        await self.session.commit()
+        await self.session.refresh(order)
+
+        return order
 
     async def _ensure_entities_exists(
-        self, order_id: Optional[int] = None,
+        self, 
+        order_id: Optional[int] = None,
         user_id: Optional[int] = None,
         order_item_id: Optional[int] = None,
     ) -> Tuple[Optional[Order], Optional[User], Optional[OrderItem]]:
