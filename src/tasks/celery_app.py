@@ -17,4 +17,4 @@ celery_app.conf.result_serializer = "json" # Save results in JSON
 celery_app.conf.accept_content = ["json"] # Reject any message that is not JSON
 
 # Discovers automatically tasks in src
-celery_app.autodiscover_tasks(["src"])
+celery_app.autodiscover_tasks(["src'"])

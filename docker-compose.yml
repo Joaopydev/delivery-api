@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management-alpine
     container_name: rabbitmq
     ports:
     - "5672:5672" # Porta do AMQP (broker)
@@ -22,5 +20,5 @@ services:
       - CELERY_RESULT_BACKEND=rpc://
     volumes:
       - ./:/app
-    command: ["celery", "-A", "src.tasks.celery_app.celery_app", "worker", "--loglevel=info"]
+    command: ["celery", "-A", "src.tasks.celery_app.celery_app", "worker", "--loglevel=info", "--pool=gevent", "--concurrency=50","--prefetch-multiplier=1"]
     restart: unless-stopped

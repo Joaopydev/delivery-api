@@ -1,5 +1,5 @@
 from sqlalchemy import event, select, func
-from db.models.schemas import Order, OrderItem
+from ..db.models.schemas import Order, OrderItem
 
 print("Registering order item event listeners.")
 

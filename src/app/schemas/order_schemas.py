@@ -1,7 +1,7 @@
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
-from db.models.schemas import ItemSize
+from ..db.models.schemas import ItemSize
 
 
 class CreateOrderSchema(BaseModel):

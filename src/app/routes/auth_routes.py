@@ -3,12 +3,12 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from schemas.auth_schemas import SigninSchema, SignupSchema
-from services.account.SigninService import SigninService
-from services.account.SignupService import SignupService
-from lib.token_jwt import verify_token, signin_access_token
+from ..schemas.auth_schemas import SigninSchema, SignupSchema
+from ..services.account.SigninService import SigninService
+from ..services.account.SignupService import SignupService
+from ..lib.token_jwt import verify_token, signin_access_token
 
-from db.connection import get_database
+from ..db.connection import get_database
 
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])

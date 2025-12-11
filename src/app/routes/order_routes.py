@@ -12,11 +12,11 @@ from fastapi import (
     status,
 )
 
-from db.connection import get_database
-from db.models.schemas import OrderStatus
-from services.orders.OrderService import OrderService
-from lib.token_jwt import verify_token
-from schemas.order_schemas import (
+from ..db.connection import get_database
+from ..db.models.schemas import OrderStatus
+from ..services.orders.OrderService import OrderService
+from ..lib.token_jwt import verify_token
+from ..schemas.order_schemas import (
     OrderSchema,
     CreateOrderSchema,
     OrderItemSchema, 
@@ -117,7 +117,11 @@ async def confirm_order(
         user_id=int(request.state.user["id"])
     )
 
-    send_email.delay(request.state.user["email"], order.to_dict)
+    send_email.delay(
+        user_emai=request.state.user["email"],
+        subject="",
+        html_content="",
+    )
     
     return {"order": order}
 

@@ -6,8 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.sql import func
 from fastapi import HTTPException, status
 
-from db.models.schemas import Order, OrderStatus, User, OrderItem
-from schemas.order_schemas import OrderSchema, OrderItemSchema
+from ...db.models.schemas import Order, OrderStatus, User, OrderItem
+from ...schemas.order_schemas import OrderSchema, OrderItemSchema
 
 
 class OrderService:

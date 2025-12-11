@@ -2,7 +2,7 @@
 import logging
 from fastapi import FastAPI
 from fastapi.security import OAuth2PasswordBearer
-from events_listeners.order_listeners import * # to register the event listeners
+from .events_listeners.order_listeners import * # to register the event listeners
 
 # Set up logging to see SQL statements
 logging.basicConfig()
@@ -14,8 +14,8 @@ app = FastAPI()
 
 oauth2_schema = OAuth2PasswordBearer(tokenUrl="auth/signin")
 
-from routes.auth_routes import auth_router
-from routes.order_routes import order_router
+from .routes.auth_routes import auth_router
+from .routes.order_routes import order_router
 
 app.include_router(order_router)
 app.include_router(auth_router)

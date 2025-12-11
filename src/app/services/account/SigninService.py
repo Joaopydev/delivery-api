@@ -9,10 +9,10 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from db.models.schemas import User
-from schemas.auth_schemas import SigninSchema
+from ...db.models.schemas import User
+from ...schemas.auth_schemas import SigninSchema
 
-from lib.token_jwt import signin_access_token
+from ...lib.token_jwt import signin_access_token
 
 load_dotenv()
 

@@ -8,10 +8,10 @@ from sqlalchemy import select
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 
-from db.connection import get_database
-from db.models.schemas import User
+from ..db.connection import get_database
+from ..db.models.schemas import User
 
-from main import oauth2_schema
+from ..main import oauth2_schema
 
 load_dotenv()
 
