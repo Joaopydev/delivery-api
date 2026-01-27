@@ -15,14 +15,21 @@ from fastapi import (
 from ..db.connection import get_database
 from ..db.models.schemas import OrderStatus
 from ..services.orders.OrderService import OrderService
-from ..lib.token_jwt import verify_token
+from ..lib.token_jwt import (
+    verify_token,
+    require_admin
+)
 from ..schemas.order_schemas import (
     OrderSchema,
     CreateOrderSchema,
     OrderItemSchema, 
     DeleteItemFromOrderSchema,
 )
-from tasks.send_email import send_email
+from tasks.emails.send_email import (
+    send_confirmation_email,
+    send_order_ready_email,
+)
+from tasks.ai.generate_response import estimate_order_time
 
 order_router = APIRouter(prefix="/orders", tags=["orders"], dependencies=[Depends(verify_token)])
 
@@ -58,6 +65,7 @@ async def list_orders(
     status: OrderStatus,
     request: Request,
     session: AsyncSession = Depends(get_database),
+    _: None = Depends(require_admin)
 ) -> Dict[str, List[OrderSchema]]:
     
     order_service = OrderService(session=session)
@@ -108,8 +116,11 @@ async def delete_item_from_order(
 async def confirm_order(
     order_id: int,
     request: Request,
-    session: AsyncSession = Depends(get_database)
+    session: AsyncSession = Depends(get_database),
+    _: None = Depends(require_admin),
 ) -> Dict[str, OrderSchema]:
+    
+    """Only the admin can call this route"""
 
     order_service = OrderService(session=session)
     order = await order_service.confirm_order(
@@ -117,11 +128,14 @@ async def confirm_order(
         user_id=int(request.state.user["id"])
     )
 
-    send_email.delay(
-        user_emai=request.state.user["email"],
-        subject="",
-        html_content="",
-    )
+    send_confirmation_email.delay({
+        "to": request.state.user["email"],
+        "name": request.state.user["name"],
+        "order_id": str(order.id)
+    })
+    estimate_order_time.delay({
+        "target_order": order.to_dict
+    })
     
     return {"order": order}
 
@@ -144,14 +158,22 @@ async def send_order(
 async def confirm_order_readiness(
     order_id: int,
     request: Request,
-    session: AsyncSession = Depends(get_database)
+    session: AsyncSession = Depends(get_database),
+    _: None = Depends(require_admin)
 ) -> Dict[str, OrderSchema]:
+    
+    """Only the admin can call this route"""
     
     order_service = OrderService(session=session)
     order = await order_service.confirm_order_readiness(
         order_id=order_id,
         user_id=int(request.state.user["id"]),
     )
+    send_order_ready_email.delay({
+        "to": request.state.user["email"],
+        "name": request.state.user["name"],
+        "order_id": str(order.id)
+    })
 
     return {"order": order}
 

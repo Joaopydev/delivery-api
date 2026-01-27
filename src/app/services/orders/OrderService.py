@@ -1,9 +1,7 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, time
 from typing import Optional, List, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Query
 from sqlalchemy import select
-from sqlalchemy.sql import func
 from fastapi import HTTPException, status
 
 from ...db.models.schemas import Order, OrderStatus, User, OrderItem
@@ -54,20 +52,19 @@ class OrderService:
     
     async def list_orders(
         self,
-        user_id: int,
         order_status: OrderStatus,
     ) -> List[Order]:
         
-        # TODO Update method to list order according the status
-        user = await self.session.get(User, user_id)
-        if not user.admin:
-            raise HTTPException(
-                detail="Unauthorized user",
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
+        today = datetime.now(tz=timezone.utc)
         
-        print(order_status, "---------------------------------------")
-        query = select(Order).where(Order.status == order_status)
+        query = (
+            select(Order)
+            .where(
+                Order.status == order_status,
+                Order.created_at >= datetime.combine(today, time.min),
+                Order.created_at <= datetime.combine(today, time.max)
+            )
+        )
         result = await self.session.execute(query)
         orders = result.scalars().all()
 
@@ -79,6 +76,7 @@ class OrderService:
         user_id: int,
         order_item_data: OrderItemSchema
     ) -> OrderItem:
+        
         order, user, _ = await self._ensure_entities_exists(
             order_id=order_id,
             user_id=user_id,
@@ -171,6 +169,7 @@ class OrderService:
             )
         
         order.status = OrderStatus.COMPLETED
+        order.order_ready_in = datetime.now(tz=timezone.utc)
         await self.session.commit()
         await self.session.refresh(order)
 
@@ -226,14 +225,3 @@ class OrderService:
             )
         
         return order, user, order_item
-
-
-    def _filter_orders_by_date(self, query: Query, start_date: str, end_date: str) -> Query:
-        if start_date:
-            query = query.filter(func.date(Order.date) >= start_date)
-        if end_date:
-            query = query.filter(func.date(Order.date) <= end_date)
-        return query
-    
-    
-        

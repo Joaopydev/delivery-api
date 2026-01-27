@@ -7,7 +7,6 @@ services:
     - "15672:15672" # Porta do painel de admin do RabbitMQ
     restart: unless-stopped
 
-
   celery_worker:
     build:
       context: .
@@ -18,7 +17,21 @@ services:
     environment:
       - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
       - CELERY_RESULT_BACKEND=rpc://
+      - MAILTRAP_API_TOKEN=${MAILTRAP_API_TOKEN}
+      - STORE_EMAIL=${STORE_EMAIL}
+      - DATA_BASE_URL_WORKER=sqlite+aiosqlite:////app/instance/banco.db
     volumes:
       - ./:/app
-    command: ["celery", "-A", "src.tasks.celery_app.celery_app", "worker", "--loglevel=info", "--pool=gevent", "--concurrency=50","--prefetch-multiplier=1"]
+    command: ["celery", "-A", "tasks.celery_app.celery_app", "worker", "--loglevel=info", "--pool=gevent", "--concurrency=50","--prefetch-multiplier=1"]
     restart: unless-stopped
+
+  flower:
+    image: mher/flower
+    container_name: flower
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672//
+    ports:
+      - "5555:5555"
+    depends_on:
+      - rabbitmq
+    command: ["celery", "flower", "--broker=amqp://guest:guest@rabbitmq:5672//"]

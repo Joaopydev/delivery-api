@@ -16,5 +16,8 @@ celery_app.conf.task_serializer = "json" # Send task in security format
 celery_app.conf.result_serializer = "json" # Save results in JSON
 celery_app.conf.accept_content = ["json"] # Reject any message that is not JSON
 
-# Discovers automatically tasks in src
-celery_app.autodiscover_tasks(["src'"])
+from tasks.emails.send_email import *
+from tasks.ai.generate_response import *
+
+# Discovers automatically the tasks
+celery_app.autodiscover_tasks(["tasks"])

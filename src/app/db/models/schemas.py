@@ -25,6 +25,7 @@ class User(Base):
     def to_dict_necessary_attributes(self) -> Dict[str, Any]:
         return {
             "id": self.id,
+            "name": self.name,
             "email": self.email,
             "active": self.active,
             "admin": self.admin
@@ -43,21 +44,25 @@ class Order(Base):
     __tablename__ = "orders"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.PENDING.value)
+    status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.PENDING)
     user: Mapped[int] = mapped_column(ForeignKey("users.id"))
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal(0.00))
     created_at: Mapped[datetime] = mapped_column(DateTime, index=True, default=lambda: datetime.now(timezone.utc))
     confirmed_on: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=True)
+    estimated_time: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=True)
+    order_ready_in: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=True)
     items: Mapped[list["OrderItem"]] = relationship("OrderItem", backref="current_order", cascade="all, delete-orphan", lazy="selectin")
 
     @property
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         return {
             "id": self.id,
-            "status": self.status,
+            "status": self.status.value,
             "price": self.price,
             "created_at": self.created_at,
             "confirmed_on": self.confirmed_on,
+            "estimated_time": self.estimated_time,
+            "order_ready_in": self.order_ready_in,
             "items": self.items,
         }
 

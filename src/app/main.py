@@ -5,10 +5,10 @@ from fastapi.security import OAuth2PasswordBearer
 from .events_listeners.order_listeners import * # to register the event listeners
 
 # Set up logging to see SQL statements
-logging.basicConfig()
-logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
-logging.getLogger("sqlalchemy.orm").setLevel(logging.INFO)
-logging.getLogger("sqlalchemy").setLevel(logging.ERROR)
+# logging.basicConfig()
+# logging.getLogger("sqlalchemy.engine").setLevel(logging.INFO)
+# logging.getLogger("sqlalchemy.orm").setLevel(logging.INFO)
+# logging.getLogger("sqlalchemy").setLevel(logging.ERROR)
 
 app = FastAPI()
 

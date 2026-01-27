@@ -86,3 +86,15 @@ async def verify_token(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid or expired access token."
         )
+
+async def require_admin(
+    user_id: str = Depends(verify_token),
+    session: AsyncSession = Depends(get_database),
+) -> None:
+    
+    user = await session.get(User, int(user_id))
+    if not user.admin:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Only admins can access this feature",
+        )
