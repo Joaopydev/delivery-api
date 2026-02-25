@@ -56,4 +56,26 @@ def send_order_ready_email(self, email_data: Dict[str, str]) -> None:
         logging.error(f"Unexpected error while sending email: {exc}")
 
 
+@shared_task(bind=True, max_retries=3, default_retry_delay=10)
+def confirm_paid_order(self, email_data: Dict[str, str]) -> None:
+    try:
+        message_dto = EmailFactory.build_message(
+            to=email_data["to"],
+            data={
+                "customer_name": email_data["name"],
+                "order_number": email_data["order_id"], 
+            },
+            template="paid_order.html",
+            subject="Confirmação de pagamento do pedido"
+        )
+
+        email_service = EmailService()
+        email_service.send(message_dto=message_dto)
+    except mt.exceptions.MailtrapError as exc:
+        logging.error(msg=f"The email could not be sent: {exc} - Trying again")
+        raise self.retry(exc=exc)
+    except Exception as exc:
+        logging.error(f"Unexpected error while sending email: {exc}")
+
+
 

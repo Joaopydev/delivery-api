@@ -1,7 +1,7 @@
 from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel
-from ..db.models.schemas import ItemSize
+from app.db.models.schemas import ItemSize
 
 
 class CreateOrderSchema(BaseModel):
@@ -29,6 +29,12 @@ class OrderSchema(BaseModel):
     created_at: datetime
     confirmed_on: Optional[datetime] = None
     items: List[OrderItemSchema]
+
+    class Config:
+        from_attributes = True
+
+class CurrentOrder(BaseModel):
+    order_id: int
 
     class Config:
         from_attributes = True

@@ -1,18 +1,16 @@
 import os
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from datetime import timedelta
 from dotenv import load_dotenv
 
 from bcrypt import hashpw, gensalt
 from fastapi import HTTPException, status
 
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from app.repository.account_repository import AccountRepository
+from app.db.models.schemas import User
+from app.schemas.auth_schemas import SignupSchema
 
-from ...db.models.schemas import User
-from ...schemas.auth_schemas import SignupSchema
-
-from ...lib.token_jwt import signin_access_token
+from app.lib.token_jwt import signin_access_token
 
 load_dotenv()
 
@@ -21,13 +19,11 @@ class SignupService:
     
     '''Service class to handle user sign-up operations.'''
 
-    def __init__(self, session: Optional[AsyncSession]):
-        self.session = session
+    def __init__(self, account_repository: AccountRepository):
+        self.account_repository = account_repository
 
     async def account_creation_service(self, data: SignupSchema) -> Dict[str, Any]:
-        query = select(User).where(User.email == data.email)
-        result = await self.session.execute(query)
-        user = result.scalars().first()
+        user = await self.account_repository.get_account_by_email(data.email)
         if user:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -38,17 +34,7 @@ class SignupService:
             password=data.password.encode("utf-8"),
             salt=gensalt(8)
         )
-
-        new_user = User(
-            name=data.name,
-            email=data.email,
-            password=hashed_password,
-            admin=data.admin
-        )
-
-        self.session.add(new_user)
-        await self.session.commit()
-        await self.session.refresh(new_user)
+        new_user = await self.account_repository.create_account(data, hashed_password)
 
         access_token = await signin_access_token(user_id=new_user.id)
         refresh_token = await signin_access_token(

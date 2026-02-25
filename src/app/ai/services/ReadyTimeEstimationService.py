@@ -5,7 +5,7 @@ from typing import Dict, Any, List
 from app.ai.client import AIClient
 from app.services.orders.OrderService import OrderService
 from app.db.models.schemas import OrderStatus, Order
-from app.db.connection import get_database
+from app.repository.order_repository import OrderRepository
 
 
 class ReadyTimeEstimationService:
@@ -25,7 +25,8 @@ class ReadyTimeEstimationService:
     def __init__(self, session):
 
         self.client = AIClient()
-        self.order_service = OrderService(session=session)
+        self.order_repository = OrderRepository(session=session)
+        self.order_service = OrderService(order_repository=self.order_repository)
     
     async def estimate(self, target_order: Dict[str, Any]) -> datetime:
 

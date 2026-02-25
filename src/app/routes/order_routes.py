@@ -3,8 +3,6 @@ from typing import (
     Any,
     List, 
 )
-
-from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import (
     APIRouter,
     Depends,
@@ -12,14 +10,14 @@ from fastapi import (
     status,
 )
 
-from ..db.connection import get_database
-from ..db.models.schemas import OrderStatus
-from ..services.orders.OrderService import OrderService
-from ..lib.token_jwt import (
+from app.dependencies.order_dependencies import get_order_service
+from app.db.models.schemas import OrderStatus
+from app.services.orders.OrderService import OrderService
+from app.lib.token_jwt import (
     verify_token,
     require_admin
 )
-from ..schemas.order_schemas import (
+from app.schemas.order_schemas import (
     OrderSchema,
     CreateOrderSchema,
     OrderItemSchema, 
@@ -37,12 +35,10 @@ order_router = APIRouter(prefix="/orders", tags=["orders"], dependencies=[Depend
 @order_router.post("/create-order", status_code=status.HTTP_201_CREATED)
 async def create_order(
     order_data: CreateOrderSchema,
-    session: AsyncSession = Depends(get_database),
+    order_service: OrderService = Depends(get_order_service),
 ) -> Dict[str, Any]:
     
-    order_service = OrderService(session=session)
     new_order = await order_service.create_order(order_data=order_data)
-
     return {"content": f"Order created successfully. OrderId: {new_order.id}"}
 
 
@@ -50,9 +46,9 @@ async def create_order(
 async def cancel_order(
     order_id: int,
     request: Request,
-    session: AsyncSession = Depends(get_database)
+    order_service: OrderService = Depends(get_order_service),
 ):
-    order_service = OrderService(session=session)
+
     order = await order_service.cancel_order(order_id=order_id, user_id=int(request.state.user["id"]))
     return {
         "content": f"Order canceled successfully. OrderId: {order_id}",
@@ -64,11 +60,10 @@ async def cancel_order(
 async def list_orders(
     status: OrderStatus,
     request: Request,
-    session: AsyncSession = Depends(get_database),
+    order_service: OrderService = Depends(get_order_service),
     _: None = Depends(require_admin)
 ) -> Dict[str, List[OrderSchema]]:
     
-    order_service = OrderService(session=session)
     orders = await order_service.list_orders(
         user_id=int(request.state.user["id"]),
         order_status=status
@@ -82,10 +77,9 @@ async def add_item_to_order(
     order_id: int,
     order_item_data: OrderItemSchema,
     request: Request,
-    session: AsyncSession = Depends(get_database),
+    order_service: OrderService = Depends(get_order_service),
 ) -> Dict[str, int]:
     
-    order_service = OrderService(session=session)
     order_item = await order_service.add_item_to_order(
         order_id=order_id,
         user_id=int(request.state.user["id"]),
@@ -99,10 +93,9 @@ async def delete_item_from_order(
     order_item_id: int,
     order: DeleteItemFromOrderSchema,
     request: Request,
-    session: AsyncSession = Depends(get_database)
+    order_service: OrderService = Depends(get_order_service),
 ) -> Dict[str, str]:
-    
-    order_service = OrderService(session=session)
+
     await order_service.delete_item_from_order(
         order_id=order.id,
         order_item_id=order_item_id,
@@ -116,13 +109,12 @@ async def delete_item_from_order(
 async def confirm_order(
     order_id: int,
     request: Request,
-    session: AsyncSession = Depends(get_database),
+    order_service: OrderService = Depends(get_order_service),
     _: None = Depends(require_admin),
 ) -> Dict[str, OrderSchema]:
     
     """Only the admin can call this route"""
 
-    order_service = OrderService(session=session)
     order = await order_service.confirm_order(
         order_id=order_id,
         user_id=int(request.state.user["id"])
@@ -143,10 +135,9 @@ async def confirm_order(
 async def send_order(
     order_id: int,
     request: Request,
-    session: AsyncSession = Depends(get_database)
+    order_service: OrderService = Depends(get_order_service),
 ) -> Dict[str, OrderSchema]:
     
-    order_service = OrderService(session=session)
     order = await order_service.send_order(
         order_id=order_id,
         user_id=int(request.state.user["id"])
@@ -158,13 +149,12 @@ async def send_order(
 async def confirm_order_readiness(
     order_id: int,
     request: Request,
-    session: AsyncSession = Depends(get_database),
+    order_service: OrderService = Depends(get_order_service),
     _: None = Depends(require_admin)
 ) -> Dict[str, OrderSchema]:
     
     """Only the admin can call this route"""
     
-    order_service = OrderService(session=session)
     order = await order_service.confirm_order_readiness(
         order_id=order_id,
         user_id=int(request.state.user["id"]),
@@ -176,7 +166,3 @@ async def confirm_order_readiness(
     })
 
     return {"order": order}
-
-
-
-# TODO implement logic to create payment route

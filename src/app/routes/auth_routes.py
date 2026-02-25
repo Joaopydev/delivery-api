@@ -1,41 +1,34 @@
 from typing import Dict, Any, Annotated
 from fastapi import APIRouter, Depends, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..schemas.auth_schemas import SigninSchema, SignupSchema
-from ..services.account.SigninService import SigninService
-from ..services.account.SignupService import SignupService
-from ..lib.token_jwt import verify_token, signin_access_token
+from app.schemas.auth_schemas import SigninSchema, SignupSchema
+from app.services.account.SigninService import SigninService
+from app.services.account.SignupService import SignupService
+from app.lib.token_jwt import verify_token, signin_access_token
 
-from ..db.connection import get_database
-
+from app.dependencies.account_dependencies import (
+    get_signin_service,
+    get_signup_service,
+)
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
 @auth_router.post("/signin", status_code=status.HTTP_200_OK)
 async def signin(
     data: Annotated[SigninSchema, OAuth2PasswordRequestForm],
-    session: AsyncSession = Depends(get_database),
+    signin_service: SigninService = Depends(get_signin_service),
 ) -> Dict[str, Any]:
-
-    signin_service = SigninService(session=session)
-    auth_tokens = await signin_service.auth_service(data=data)
-
-    return auth_tokens
-
+    
+    return await signin_service.auth_service(data=data)
 
 @auth_router.post("/signup", status_code=status.HTTP_201_CREATED)
 async def signup(
     data: SignupSchema,
-    session: AsyncSession = Depends(get_database)
+    signup_service: SignupService = Depends(get_signup_service),
 ) -> Dict[str, Any]:
     
-    signup_service = SignupService(session=session)
-    auth_tokens = await signup_service.account_creation_service(data=data)
-
-    return auth_tokens
-
+    return await signup_service.account_creation_service(data=data)
 
 @auth_router.post("/refresh")
 async def use_refresh_token(user_id: str = Depends(verify_token)) -> Dict[str, Any]:

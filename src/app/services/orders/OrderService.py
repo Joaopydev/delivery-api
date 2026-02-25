@@ -1,27 +1,26 @@
 from datetime import datetime, timedelta, timezone, time
 from typing import Optional, List, Tuple
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from fastapi import HTTPException, status
 
-from ...db.models.schemas import Order, OrderStatus, User, OrderItem
-from ...schemas.order_schemas import OrderSchema, OrderItemSchema
+from app.db.models.schemas import Order, OrderStatus, User, OrderItem
+from app.schemas.order_schemas import OrderSchema, OrderItemSchema
+from app.repository.order_repository import OrderRepository
+from app.repository.account_repository import AccountRepository
 
 
 class OrderService:
 
     '''Service class to handle order-related operations.'''
 
-    def __init__(self, session: Optional[AsyncSession]):
-        self.session = session
+    def __init__(self, account_repository: AccountRepository, order_repository: OrderRepository):
+
+        self.account_repository = account_repository
+        self.order_repository = order_repository
 
     async def create_order(self, order_data: OrderSchema):
-        new_order = Order(user=order_data.user_id)
-        self.session.add(new_order)
-        await self.session.commit()
-        await self.session.refresh(new_order)
-
-        return new_order
+        order = await self.order_repository.create_order(order_data)
+        return order
         
     async def cancel_order(
         self, 
@@ -43,10 +42,7 @@ class OrderService:
                 status_code=status.HTTP_409_CONFLICT,
                 detail="The current user is not the order holder who wishes to cancel the order.",
             )
-        
-        order.status = OrderStatus.CANCELED
-        await self.session.commit()
-        await self.session.refresh(order)
+        await self.order_repository.cancel_order(order)
         
         return order
     
@@ -55,19 +51,7 @@ class OrderService:
         order_status: OrderStatus,
     ) -> List[Order]:
         
-        today = datetime.now(tz=timezone.utc)
-        
-        query = (
-            select(Order)
-            .where(
-                Order.status == order_status,
-                Order.created_at >= datetime.combine(today, time.min),
-                Order.created_at <= datetime.combine(today, time.max)
-            )
-        )
-        result = await self.session.execute(query)
-        orders = result.scalars().all()
-
+        orders = await self.order_repository.list_orders_by_status(order_status)
         return orders
     
     async def add_item_to_order(
@@ -88,17 +72,7 @@ class OrderService:
                 detail="You do not have permission to modify this order.",
             )
         
-        order_item = OrderItem(
-            quantity=order_item_data.quantity,
-            flavor=order_item_data.flavor,
-            size=order_item_data.size,
-            unit_price=order_item_data.unit_price,
-            order=order.id,
-        )
-        self.session.add(order_item)
-        await self.session.commit()
-        await self.session.refresh(order_item)
-
+        order_item = await self.order_repository.add_item_to_order(order, order_item_data)
         return order_item
     
     async def delete_item_from_order(
@@ -125,8 +99,7 @@ class OrderService:
                 detail="The order item does not belong to the specified order.",
             )
         
-        await self.session.delete(order_item)
-        await self.session.commit()
+        await self.order_repository.delete_item_from_order(order_item)
     
     async def confirm_order(
         self,
@@ -142,12 +115,10 @@ class OrderService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You do not have permission to modify this order"
             )
-        
-        order.status = OrderStatus.PREPARING
-        order.confirmed_on = datetime.now(tz=timezone.utc)
-
-        await self.session.commit()
-        await self.session.refresh(order)
+        order = await self.order_repository.update_order_status(
+            order=order,
+            status=OrderStatus.PREPARING,
+        )
 
         return order
     
@@ -167,11 +138,10 @@ class OrderService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="You do not have permission to modify this order"
             )
-        
-        order.status = OrderStatus.COMPLETED
-        order.order_ready_in = datetime.now(tz=timezone.utc)
-        await self.session.commit()
-        await self.session.refresh(order)
+        order = await self.order_repository.update_order_status(
+            order=order,
+            status=OrderStatus.COMPLETED
+        )
 
         return order
         
@@ -190,10 +160,10 @@ class OrderService:
                 detail="You do not have permission to modify this order"
             )
         
-        order.status = OrderStatus.AWAITING_CONFIRMATION
-        await self.session.commit()
-        await self.session.refresh(order)
-
+        order = await self.order_repository.update_order_status(
+            order=order,
+            status=OrderStatus.AWAITING_CONFIRMATION,
+        )
         return order
 
     async def _ensure_entities_exists(
@@ -203,21 +173,21 @@ class OrderService:
         order_item_id: Optional[int] = None,
     ) -> Tuple[Optional[Order], Optional[User], Optional[OrderItem]]:
         
-        order = await self.session.get(Order, order_id) if order_id else None
+        order = await self.order_repository.get_order_by_id(order_id) if order_id else None
         if order_id and not order:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Order not found",
             )
         
-        user = await self.session.get(User, user_id) if user_id else None
+        user = await self.account_repository.get_account_by_id(user_id) if user_id else None
         if user_id and not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found",
             )
         
-        order_item = await self.session.get(OrderItem, order_item_id) if order_item_id else None
+        order_item = await self.order_repository.get_order_item_by_id(order_item_id) if order_item_id else None
         if order_item_id and not order_item:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

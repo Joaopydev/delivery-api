@@ -1,7 +1,7 @@
 import os
 import mailtrap as mt
 
-from .dto import EmailMessageDto
+from app.emails.dto import EmailMessageDto
 
 
 class EmailService:

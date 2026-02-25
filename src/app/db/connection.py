@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, AsyncSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 
 load_dotenv()
 
@@ -33,16 +33,23 @@ async_session = sessionmaker(
 )
 
 async def get_database():
+    session = async_session()
     try:
-        session = async_session()
         yield session
+        await session.commit()
+    except:
+        await session.rollback()
+        raise
     finally:
         await session.close()
 
 @asynccontextmanager
 async def get_session_to_worker():
+    session = async_session()
     try:
-        session = async_session()
         yield session
+    except:
+        await session.rollback()
+        raise
     finally:
         await session.close()

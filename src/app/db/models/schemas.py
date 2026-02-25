@@ -14,9 +14,9 @@ class Base(DeclarativeBase):
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, nullable=False, index=True)
     name: Mapped[str] = mapped_column(String(200))
-    email: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(200), unique=True, nullable=False, index=True)
     password: Mapped[str] = mapped_column(LargeBinary)
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     admin: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -43,14 +43,14 @@ class OrderStatus(Enum):
 class Order(Base):
     __tablename__ = "orders"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.PENDING)
-    user: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, index=True)
+    status: Mapped[OrderStatus] = mapped_column(SQLEnum(OrderStatus), default=OrderStatus.PENDING, index=True)
+    user: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal(0.00))
     created_at: Mapped[datetime] = mapped_column(DateTime, index=True, default=lambda: datetime.now(timezone.utc))
-    confirmed_on: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=True)
-    estimated_time: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=True)
-    order_ready_in: Mapped[datetime] = mapped_column(DateTime, index=True, nullable=True)
+    confirmed_on: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    estimated_time: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    order_ready_in: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     items: Mapped[list["OrderItem"]] = relationship("OrderItem", backref="current_order", cascade="all, delete-orphan", lazy="selectin")
 
     @property
@@ -76,16 +76,25 @@ class OrderItem(Base):
 
     __tablename__ = "order_item"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, nullable=False, index=True)
     quantity: Mapped[int] = mapped_column(Integer)
     flavor: Mapped[str] = mapped_column(String(200))
     size: Mapped[str] = mapped_column(SQLEnum(ItemSize))
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
-    order: Mapped[Order] = mapped_column(ForeignKey("orders.id"))
-
-
-# TODO Implement Kitchen Table
-
+    order: Mapped[Order] = mapped_column(ForeignKey("orders.id"), index=True)
 
 
 # TODO Implement Payments Table
+
+class PaymentStatus(Enum):
+    PENDING: str = "pending"
+    PAID: str = "paid"
+    CANCELED: str = "canceled"
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, nullable=False, index=True)
+    status: Mapped[PaymentStatus] = mapped_column(SQLEnum(PaymentStatus), default=PaymentStatus.PENDING)
+    related_order: Mapped[int] = mapped_column(ForeignKey("orders.id"), index=True)
+    amount_paid: Mapped[Decimal] = mapped_column(Numeric(10, 2), default=Decimal(0.00))
