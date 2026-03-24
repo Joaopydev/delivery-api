@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.connection import get_database
 from app.repository.account_repository import AccountRepository
-from app.services.account.SigninService import SigninService
-from app.services.account.SignupService import SignupService
+from app.services.account.signin import SigninService
+from app.services.account.signup import SignupService
 
 
 def get_account_repository(session: AsyncSession = Depends(get_database)) -> AccountRepository:

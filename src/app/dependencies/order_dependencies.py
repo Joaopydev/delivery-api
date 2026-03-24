@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.connection import get_database
 from app.events.dispatcher import EventDispatcher
 
-from app.services.orders.OrderService import OrderService
+from app.services.orders.order import OrderService
 
 from app.repository.order_repository import OrderRepository
 from app.repository.account_repository import AccountRepository

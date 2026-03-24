@@ -1,8 +1,8 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.payments.PaymentService import PaymentService
-from app.services.payments.WebHookSerivce import WebHookService
+from app.services.payments.payment import PaymentService
+from app.services.payments.webhook import WebHookService
 from app.repository.payment_repository import PaymentRepository
 
 from app.db.connection import get_database
