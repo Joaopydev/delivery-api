@@ -18,7 +18,7 @@ click-plugins==1.1.1.2
 click-repl==0.3.0
 colorama==0.4.6
 cryptography==46.0.3
--e git+https://github.com/Joaopydev/delivery-api.git@796acb7374e6dfc84eb0e539aa3471aef44bfa1e#egg=delivery_api
+-e git+https://github.com/Joaopydev/delivery-api.git@67fca356e17b8fc3a2a84b422ac72f943fe844c4#egg=delivery_api
 dill==0.4.1
 distlib==0.4.0
 distro==1.9.0
