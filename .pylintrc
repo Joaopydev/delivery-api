@@ -14,6 +14,7 @@ disable=
       C0304, # missing-final-newline
       C0327, # mixed-line-endings
       C0301, # line-too-long
+      E1136, # unsubscriptable-object
 
 # Analyse import fallback blocks. This can be used to support both Python 2 and
 # 3 compatible code, which means that the block might have code that exists

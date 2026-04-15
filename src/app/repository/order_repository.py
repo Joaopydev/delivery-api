@@ -11,21 +11,21 @@ class OrderRepository:
         self.session = session
 
     async def create_order(self, order_data: OrderSchema):
-        
+
         new_order = Order(user=order_data.user_id)
         self.session.add(new_order)
         await self.session.flush()
 
         return new_order
-    
+
     async def get_order_by_id(self, order_id: int) -> Order:
         order = await self.session.get(Order, order_id)
         return order
-    
+
     async def get_order_item_by_id(self, order_item_id: int) -> OrderItem:
         order_item = await self.session.get(OrderItem, order_item_id)
         return order_item
-    
+
     async def cancel_order(self, order: Order):
 
         order.status = OrderStatus.CANCELED
@@ -45,12 +45,12 @@ class OrderRepository:
         await self.session.flush()
 
         return order_item
-    
+
     async def delete_item_from_order(self, order_item: OrderItem):
 
         await self.session.delete(order_item)
         await self.session.flush()
-        
+
     async def update_order_status(self, order: Order, status: OrderStatus):
 
         if status == OrderStatus.PREPARING:
@@ -63,11 +63,15 @@ class OrderRepository:
 
         return order
 
+    async def implement_estimated_time(self, order_id: int, estimated_time: datetime):
+        order = await self.get_order_by_id(order_id)
+        order.estimated_time = estimated_time
+        await self.session.flush
 
     async def list_orders_by_status(self, order_status: OrderStatus):
 
         today = datetime.now(tz=timezone.utc)
-        
+
         query = (
             select(Order)
             .where(

@@ -63,7 +63,7 @@ class Order(Base):
             "confirmed_on": self.confirmed_on,
             "estimated_time": self.estimated_time,
             "order_ready_in": self.order_ready_in,
-            "items": self.items,
+            "items": [item.to_dict for item in self.items],
         }
 
 class ItemSize(Enum):
@@ -83,8 +83,17 @@ class OrderItem(Base):
     unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     order: Mapped[Order] = mapped_column(ForeignKey("orders.id"), index=True)
 
+    @property
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "quantity": self.quantity,
+            "flavor": self.flavor,
+            "size": self.size,
+            "unit_price": self.unit_price,
+            "order": self.order,
+        }
 
-# TODO Implement Payments Table
 
 class PaymentStatus(Enum):
     PENDING: str = "pending"

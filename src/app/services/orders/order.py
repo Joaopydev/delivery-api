@@ -166,7 +166,7 @@ class OrderService:
             order=order,
             status=OrderStatus.COMPLETED
         )
-        self.event_dispatcher.dispatch(
+        await self.event_dispatcher.dispatch(
             OrderReadyEvent(
                 user_email=user.email,
                 user_name=user.name,
