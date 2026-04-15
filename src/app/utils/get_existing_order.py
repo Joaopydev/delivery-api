@@ -1,20 +1,16 @@
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends
 
-from ..db.connection import get_database
-from ..db.models.schemas import Order
-from ..schemas.order_schemas import CurrentOrder
+from app.db.connection import get_database
+from app.db.models.schemas import Order
+from app.schemas.order_schemas import CurrentOrder
+from app.core.exceptions import OrderNotFoundError
 
 async def order_exists(
     current_order: CurrentOrder,
     session = Depends(get_database)
 ) -> Order:
-    
-    order = await session.get(Order, current_order.order_id)
 
+    order = await session.get(Order, current_order.order_id)
     if not order:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Order not found"
-        )
-    
+        raise OrderNotFoundError()
     return order
