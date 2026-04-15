@@ -1,4 +1,3 @@
-import asyncio
 from typing import Type, Callable, Dict, List
 
 
@@ -18,4 +17,5 @@ class EventDispatcher:
         event_type = type(event)
         handlers = self._handlers.get(event_type, [])
 
-        await asyncio.gather(*[handler(event) for handler in handlers])
+        for handler in handlers:
+            handler(event)
